@@ -3,9 +3,15 @@
 #include <iostream>
 #include <opencv4/opencv2/opencv.hpp>
 
-#define PRINT(val) \
+#define PRINT_LN(val) \
         {\
             std::cout << val << std::endl;\
+        }\
+
+
+#define PRINT(_val) \
+        {\
+            std::cout << _val << " ";\
         }\
 
 
@@ -116,81 +122,131 @@ namespace ex2
  * I(i,j)=5∗I(i,j)−[I(i−1,j)+I(i+1,j)+I(i,j−1)+I(i,j+1)]
  * ⟺I(i,j)∗M,where M=i∖j−10+1−10−100−15−1+10−10
  */
+
 namespace ex3
 {
-    void Sharper(const Mat& image, Mat& result);
-
-    int Test(const char* pic1Path) {
-        cvflann::StartStopTimer timer;
-
-        PRINT("ok")
-
-        Mat src, dst, dst2;
-
-        src = imread(pic1Path, IMREAD_COLOR);
-        CHECK_IMAGE_EMPTY(src, pic1Path)
-
-        namedWindow("INPUT", WINDOW_AUTOSIZE);
-        namedWindow("OUTPUT", WINDOW_AUTOSIZE);
-
-        imshow("INPUT", src);
-
-        timer.start();
-        Sharper(src, dst);
-        timer.stop();
-        PRINT(timer.value)
-
-        imshow("OUTPUT", dst);
-        timer.reset();
-        waitKey();
-
-        Mat kernel = (Mat_<char>(3,3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
-
-        timer.start();
-        filter2D( src, dst2, src.depth(), kernel );
-        timer.stop();
-
-        PRINT(timer.value)
-
-        imshow( "Output", dst2 );
-
-        waitKey();
-
-        return EXIT_SUCCESS;
-
-    }
-
-    void Sharper(const Mat& image, Mat& result)
+    namespace MaskOperationOnMatrices
     {
-        const int chan = image.channels();
-        result.create(image.size(), image.type());
+        void Sharper(const Mat& image, Mat& result);
 
-        for (int i = 1; i < image.rows - 1; ++i) {
-            const auto* pre = image.ptr<uchar>(i - 1);
-            const auto* curr = image.ptr<uchar>(i);
-            const auto* next = image.ptr<uchar>(i + 1);
+        int Test(const char* pic1Path) {
+            cvflann::StartStopTimer timer;
 
-            auto* output = result.ptr<uchar>(i);
+            PRINT("ok")
+
+            Mat src, dst, dst2;
+
+            src = imread(pic1Path, IMREAD_COLOR);
+            CHECK_IMAGE_EMPTY(src, pic1Path)
+
+            namedWindow("INPUT", WINDOW_AUTOSIZE);
+            namedWindow("OUTPUT", WINDOW_AUTOSIZE);
+
+            imshow("INPUT", src);
+
+            timer.start();
+            Sharper(src, dst);
+            timer.stop();
+            PRINT(timer.value)
+
+            imshow("OUTPUT", dst);
+            timer.reset();
+            waitKey();
+
+            Mat kernel = (Mat_<char>(3,3) << 0, -1, 0, -1, 5, -1, 0, -1, 0);
+
+            timer.start();
+            filter2D( src, dst2, src.depth(), kernel );
+            timer.stop();
+
+            PRINT(timer.value)
+
+            imshow( "Output", dst2 );
+
+            waitKey();
+
+            return EXIT_SUCCESS;
+
+        }
+
+        void Sharper(const Mat& image, Mat& result)
+        {
+            const int chan = image.channels();
+            result.create(image.size(), image.type());
+
+            for (int i = 1; i < image.rows - 1; ++i) {
+                const auto* pre = image.ptr<uchar>(i - 1);
+                const auto* curr = image.ptr<uchar>(i);
+                const auto* next = image.ptr<uchar>(i + 1);
+
+                auto* output = result.ptr<uchar>(i);
 
 
-            for(int j= chan; j < chan * (image.cols - 1); ++j)
-            {
-                output[j] = saturate_cast<uchar>
-                        (5 * curr[j] - curr[j - chan] - curr[j + chan] - pre[j] - next[j]);
+                for(int j= chan; j < chan * (image.cols - 1); ++j)
+                    output[j] = saturate_cast<uchar>
+                            (5 * curr[j] - curr[j - chan] - curr[j + chan] - pre[j] - next[j]);
+
+                result.row(0).setTo(Scalar(0));
+                result.row(result.rows-1).setTo(Scalar(0));
+                result.col(0).setTo(Scalar(0));
+                result.col(result.cols-1).setTo(Scalar(0));
+
             }
-
-            result.row(0).setTo(Scalar(0));
-            result.row(result.rows-1).setTo(Scalar(0));
-            result.col(0).setTo(Scalar(0));
-            result.col(result.cols-1).setTo(Scalar(0));
 
         }
 
     }
+    namespace OperationWithImage
+    {
+        int Test(const char * picPath)
+        {
+            Mat img = imread(picPath);
 
+            CHECK_IMAGE_EMPTY(img, picPath)
+
+            // if you want to create a gray one
+            Mat imgGray = imread(picPath, IMREAD_GRAYSCALE);
+
+            // check your types
+//            cout << typeid(imgGray).name() << " " << typeid(Scalar).name() << endl;
+
+            //  to save an image to a file
+            // imwrite(picPath, img);
+
+            // in order to get pixel intensity value, you have to knoww the type of an image and the number of chans
+
+            for (int i = 0; i <= getElemSize(img.rows); i++ )
+                for (int j = 0; j <= getElemSize(img.cols); j++ )
+                {
+//                    cout << (static_cast<Scalar>(img.at<uchar>(Point(i, j)))).val[0] << " ";
+
+                    Vec3f intense = img.at<Vec3f>(Point(i, j));
+                    cout << intense.val[0] << " ";
+                    cout << intense.val[1] << " ";
+                    cout << intense.val[2] << endl;
+
+                    img.at<Vec3f>(Point(i, j)) = {static_cast<float>(i),static_cast<float>(j),0};
+
+                }
+
+//            show the changed pic
+//            namedWindow("OUTPUT", WINDOW_NORMAL);
+//            imshow( "OUTPUT", img);
+//            waitKey();
+
+
+
+
+
+
+
+
+
+
+            return 0;
+        }
+    }
 }
-
-
 
 
 int main()
@@ -199,7 +255,7 @@ int main()
     const char * pic1Path = "/home/xamblot/CLionProjects/OpencvLearningCpp/asset/pic1.jpg";
 
     //ex1::Runner(pic1Path);
-    ex3::Test(pic1Path);
+    ex3::OperationWithImage::Test(pic1Path);
 
     return 0;
 }
