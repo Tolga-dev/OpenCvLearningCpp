@@ -514,16 +514,59 @@ namespace ex7::theory
     }
 }
 
+
+// a program to perform convolution operation over an image
+// race conditions
+// it is occured when more than on e thread try to write or read andwrite to a particular memory block
+// simultaneously.
+
+// multiple threads can read from data but only one data can write on that blocks
+
+// algorithms in which multiple thread may write to a single memory location
+//
 namespace ex8::theory
 {
+    // parallel implementation
+
+
     // parallel frameworks
     //
+    void conv_seq(Mat src, Mat &dst, Mat kernel)
+    {
+        int rows = src.rows, cols = src.cols;
+        dst = Mat(rows, cols, src.type());
+        // Taking care of edge values
+        // Make border = kernel.rows / 2;
+        int sz = kernel.rows / 2;
+        copyMakeBorder(src, src, sz, sz, sz, sz, BORDER_REPLICATE);
+        for (int i = 0; i < rows; i++)
+        {
+            uchar *dptr = dst.ptr(i);
+            for (int j = 0; j < cols; j++)
+            {
+                double value = 0;
+                for (int k = -sz; k <= sz; k++)
+                {
+                    // slightly faster results when we create a ptr due to more efficient memory access.
+                    uchar *sptr = src.ptr(i + sz + k);
+                    for (int l = -sz; l <= sz; l++)
+                    {
+                        value += kernel.ptr<double>(k + sz)[l + sz] * sptr[j + sz + l];
+                    }
+                }
+                dptr[j] = saturate_cast<uchar>(value);
+            }
+        }
+    }
+
     Mat Parallelize(Mat& img, Mat& img2)
     {
         
 
         return img;
     }
+
+
 
     int Test(const char * picPath, const char * picPath2)
     {
